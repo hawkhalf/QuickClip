@@ -1,0 +1,67 @@
+html {
+  color-scheme: dark;
+  background: #07101b;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: #07101b;
+  font-family:
+    Inter,
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2995ff;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: #147ee8;
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09131f;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid #09131f;
+  border-radius: 10px;
+  background: #26374d;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #344a66;
+}
+`
