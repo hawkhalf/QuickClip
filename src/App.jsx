@@ -219,6 +219,14 @@ function getCategoryIcon(categoryId, categoryList) {
   return category.icon;
 }
 
+function getCategory(categoryId, categoryList) {
+  return (
+    categoryList.find(
+      (category) => category.id === categoryId
+    ) || null
+  );
+}
+
 function loadCategories() {
   try {
     const saved = localStorage.getItem(
@@ -1172,13 +1180,25 @@ results.sort((a, b) => {
                 >
                   <div className="card-heading">
                     <div className="card-title-wrap">
-                      <div
-                        className={
-                          "item-icon icon-" + item.category
-                        }
-                      >
-                        {item.icon}
-                      </div>
+                    <div
+  className={
+    "item-icon icon-" + item.category
+  }
+>
+  {getCategory(item.category, categories)?.iconFile ? (
+    <img
+      src={`${import.meta.env.BASE_URL}icons/categories/${
+        getCategory(item.category, categories).iconFile
+      }`}
+      alt=""
+      className="item-category-icon-image"
+    />
+  ) : (
+    getCategory(item.category, categories)?.icon ||
+    item.icon ||
+    "▦"
+  )}
+</div>
 
                       <h3>{item.title}</h3>
                     </div>
