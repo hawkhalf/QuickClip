@@ -271,10 +271,39 @@ function loadCategories() {
   }
 }
 
+function CopyIcon() {
+  return (
+    <svg
+      className="copy-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <rect
+        x="9"
+        y="9"
+        width="10"
+        height="10"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path
+        d="M15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function App() {
   const [items, setItems] = useState(loadItems);
   const [categories, setCategories] = useState(loadCategories);
   const [selectedId, setSelectedId] = useState(null);
+  const [detailItemId, setDetailItemId] = useState(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTag, setActiveTag] = useState("allt");
   const [search, setSearch] = useState("");
@@ -324,44 +353,58 @@ function App() {
   }, [isModalOpen]);
 
   useEffect(() => {
-    let temporaryUrl = "";
-  
-    async function loadSelectedImage() {
-      if (!selectedItem?.imageId) {
+  let temporaryUrl = "";
+
+  async function loadDetailImage() {
+    if (!detailItem?.imageId) {
+      setSelectedImageUrl("");
+      return;
+    }
+
+    try {
+      const blob = await getImage(
+        detailItem.imageId
+      );
+
+      if (!blob) {
         setSelectedImageUrl("");
         return;
       }
-  
-      try {
-        const blob = await getImage(
-          selectedItem.imageId
-        );
-  
-        if (!blob) {
-          setSelectedImageUrl("");
-          return;
-        }
-  
-        temporaryUrl = URL.createObjectURL(blob);
-        setSelectedImageUrl(temporaryUrl);
-      } catch (error) {
-        console.error(
-          "Ekki tókst að sækja mynd:",
-          error
-        );
-  
-        setSelectedImageUrl("");
-      }
+
+      temporaryUrl = URL.createObjectURL(blob);
+      setSelectedImageUrl(temporaryUrl);
+    } catch (error) {
+      console.error(
+        "Ekki tókst að sækja mynd:",
+        error
+      );
+
+      setSelectedImageUrl("");
     }
-  
-    loadSelectedImage();
-  
-    return () => {
-      if (temporaryUrl) {
-        URL.revokeObjectURL(temporaryUrl);
-      }
-    };
-  }, [selectedId, items]);
+  }
+
+  loadDetailImage();
+
+  return () => {
+    if (temporaryUrl) {
+      URL.revokeObjectURL(temporaryUrl);
+    }
+  };
+}, [detailItemId, items]);
+
+useEffect(() => {
+  function handleKeyDown(event) {
+    if (event.key === "Escape" && detailItemId) {
+      setDetailItemId(null);
+    }
+  }
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}, [detailItemId]);
 
   useEffect(() => {
     try {
@@ -379,6 +422,9 @@ function App() {
 
   const selectedItem =
   items.find((item) => item.id === selectedId) || null;
+
+  const detailItem =
+  items.find((item) => item.id === detailItemId) || null;
 
   const tags = useMemo(() => {
     const allTags = [];
@@ -1176,6 +1222,7 @@ results.sort((a, b) => {
                   }
                   onClick={() => {
                     setSelectedId(item.id);
+                    setDetailItemId(item.id);
                   }}
                 >
                   <div className="card-heading">
@@ -1269,7 +1316,7 @@ results.sort((a, b) => {
                         copyItem(item);
                       }}
                     >
-                      <span>▣</span>
+                      <CopyIcon />
 
                       {copiedId === item.id
                         ? "Afritað!"
@@ -1302,55 +1349,80 @@ results.sort((a, b) => {
           </section>
         </main>
 
-        <aside className="detail-panel">
-          {selectedItem && (
+        {detailItem && (
+  <div
+    className="detail-modal-backdrop"
+    onMouseDown={() => setDetailItemId(null)}
+  >
+    <div
+      className="detail-modal"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="detail-modal-close"
+        onClick={() => setDetailItemId(null)}
+        aria-label="Loka"
+        title="Loka"
+      >
+        ×
+      </button>
+          {detailItem && (
             <>
               <div className="detail-heading">
                 <div
                   className={
-                    "detail-icon icon-" + selectedItem.category
+                    "detail-icon icon-" + detailItem.category
                   }
                 >
-                  {selectedItem.icon}
+                  {detailItem.icon}
                 </div>
 
                 <div className="detail-title">
-                  <h2>{selectedItem.title}</h2>
-                  <span>{selectedItem.type}</span>
-                </div>
+  <div className="detail-title-row">
+    <h2>{detailItem.title}</h2>
 
-                <button
-                  type="button"
-                  className={
-                    selectedItem.favorite
-                      ? "star-button detail-star favorite"
-                      : "star-button detail-star"
-                  }
-                  onClick={() => {
-                    toggleFavorite(selectedItem.id);
-                  }}
-                >
-                  {selectedItem.favorite ? "★" : "☆"}
-                </button>
+    <button
+      type="button"
+      className={
+        detailItem.favorite
+          ? "star-button detail-star favorite"
+          : "star-button detail-star"
+      }
+      onClick={() => {
+        toggleFavorite(detailItem.id);
+      }}
+      title={
+        detailItem.favorite
+          ? "Fjarlægja úr uppáhaldi"
+          : "Bæta í uppáhald"
+      }
+    >
+      {detailItem.favorite ? "★" : "☆"}
+    </button>
+  </div>
+
+  <span>{detailItem.type}</span>
+</div>
               </div>
 
               <p className="section-label">Forskoðun</p>
 
               <div
                 className={
-                  selectedItem.type === "Kóði"
+                  detailItem.type === "Kóði"
                     ? "preview-box code-content"
                     : "preview-box"
                 }
               >
-                {selectedItem.content}
+                {detailItem.content}
               </div>
 
               {selectedImageUrl && (
   <div className="detail-image-preview">
     <img
       src={selectedImageUrl}
-      alt={selectedItem.title}
+      alt={detailItem.title}
     />
   </div>
 )}
@@ -1358,17 +1430,17 @@ results.sort((a, b) => {
               <button
                 type="button"
                 className={
-                  copiedId === selectedItem.id
+                  copiedId === detailItem.id
                     ? "big-copy-button copied"
                     : "big-copy-button"
                 }
                 onClick={() => {
-                  copyItem(selectedItem);
+                  copyItem(detailItem);
                 }}
               >
-                <span>▣</span>
+                <CopyIcon />
 
-                {copiedId === selectedItem.id
+                {copiedId === detailItem.id
                   ? "Afritað!"
                   : "Afrita"}
 
@@ -1379,7 +1451,7 @@ results.sort((a, b) => {
                 <p className="section-label">Tögg</p>
 
                 <div className="detail-tags">
-                  {selectedItem.tags.map((tag) => (
+                  {detailItem.tags.map((tag) => (
                     <button
                       key={tag}
                       type="button"
@@ -1413,7 +1485,8 @@ results.sort((a, b) => {
                   type="button"
                   className="detail-action"
                   onClick={() => {
-                    openEditItemModal(selectedItem);
+                    openEditItemModal(detailItem);
+                    setDetailItemId(null);
                   }}
                 >
                   ✎ <span>Breyta atriði</span>
@@ -1424,7 +1497,7 @@ results.sort((a, b) => {
   onClick={() => {
     setItems((current) =>
       current.map((item) =>
-        item.id === selectedItem.id
+        item.id === detailItem.id
           ? {
               ...item,
               pinned: !item.pinned,
@@ -1437,7 +1510,7 @@ results.sort((a, b) => {
   📌
 
   <span>
-    {selectedItem.pinned
+    {detailItem.pinned
       ? "Losa úr festingu"
       : "Festa efst"}
   </span>
@@ -1446,7 +1519,8 @@ results.sort((a, b) => {
                   type="button"
                   className="detail-action delete-action"
                   onClick={() => {
-                    setDeleteTarget(selectedItem);
+                    setDeleteTarget(detailItem);
+                    setDetailItemId(null);
                   }}
                 >
                   🗑 <span>Eyða atriði</span>
@@ -1456,12 +1530,12 @@ results.sort((a, b) => {
                   type="button"
                   className="detail-action"
                   onClick={() => {
-                    toggleFavorite(selectedItem.id);
+                    toggleFavorite(detailItem.id);
                   }}
                 >
                   ☆
                   <span>
-                    {selectedItem.favorite
+                    {detailItem.favorite
                       ? "Fjarlægja úr uppáhaldi"
                       : "Bæta í uppáhald"}
                   </span>
@@ -1495,19 +1569,19 @@ results.sort((a, b) => {
               <div className="metadata">
   <div>
     <span>Notkun</span>
-    <strong>{selectedItem.uses || 0} sinnum</strong>
+    <strong>{detailItem.uses || 0} sinnum</strong>
   </div>
 
   <div>
     <span>Tegund</span>
-    <strong>{selectedItem.type}</strong>
+    <strong>{detailItem.type}</strong>
   </div>
 
   <div>
     <span>Búið til</span>
     <strong>
-      {selectedItem.createdAt
-        ? new Date(selectedItem.createdAt).toLocaleString("is-IS", {
+      {detailItem.createdAt
+        ? new Date(detailItem.createdAt).toLocaleString("is-IS", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -1521,8 +1595,8 @@ results.sort((a, b) => {
   <div>
     <span>Síðast breytt</span>
     <strong>
-      {selectedItem.updatedAt
-        ? new Date(selectedItem.updatedAt).toLocaleString("is-IS", {
+      {detailItem.updatedAt
+        ? new Date(detailItem.updatedAt).toLocaleString("is-IS", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -1534,8 +1608,10 @@ results.sort((a, b) => {
   </div>
 </div>
             </>
-          )}
-        </aside>
+                )}
+    </div>
+  </div>
+)}
 
         {isModalOpen && (
           <div
