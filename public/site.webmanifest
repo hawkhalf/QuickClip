@@ -1,13 +1,13 @@
 {
     "name": "QuickClip",
     "short_name": "QuickClip",
-    "start_url": "/",
+    "start_url": "/QuickClip/",
     "display": "standalone",
     "background_color": "#111827",
     "theme_color": "#111827",
     "icons": [
       {
-        "src": "/quickclip_icon.png",
+        "src": "/QuickClip/quickclip_icon.png",
         "sizes": "512x512",
         "type": "image/png"
       }
